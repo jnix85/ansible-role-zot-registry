@@ -1,0 +1,97 @@
+---
+# Defaults for zot_registry role
+
+# Version & distribution flavor
+zot_version: "2.1.2"
+zot_flavor: "full"                   # "full" (includes UI, metrics, search, sync) or "minimal"
+zot_install_zli: true                # Install zli CLI management utility
+
+# System identity & paths
+zot_user: "zot"
+zot_group: "zot"
+zot_user_uid: 955
+zot_group_gid: 955
+zot_user_shell: "/usr/sbin/nologin"
+
+zot_bin_dir: "/usr/local/bin"
+zot_config_dir: "/etc/zot"
+zot_data_dir: "/var/lib/zot"
+zot_log_dir: "/var/log/zot"
+
+# Network binding & Ingress (tailored for Nginx Proxy Manager termination)
+zot_listen_address: "0.0.0.0"
+zot_listen_port: 8585
+zot_behind_reverse_proxy: true
+
+# Native TLS (Optional; keep false when using external reverse proxy like NPM)
+zot_tls_enabled: false
+zot_tls_cert: ""
+zot_tls_key: ""
+zot_tls_cacert: ""
+
+# IDrive e2 (S3-compatible) Storage Configuration
+zot_s3_enabled: true
+zot_s3_endpoint: ""                  # IDrive e2 endpoint hostname or URL (e.g., "s3.us-east-1.idrivee2-20.com")
+zot_s3_bucket: ""                    # IDrive e2 bucket name
+zot_s3_region: "us-east-1"
+zot_s3_access_key: ""                # IDrive e2 Access Key ID
+zot_s3_secret_key: ""                # IDrive e2 Secret Access Key
+zot_s3_secure: true                  # Use HTTPS for S3 API calls
+zot_s3_skip_verify: false            # Insecure TLS skip (false for production)
+zot_s3_force_path_style: true        # Required for IDrive e2 and S3-compatible endpoints
+
+# S3 Blob Deduplication & Garbage Collection
+zot_storage_dedupe: true
+zot_storage_commit: true
+zot_storage_gc: true
+zot_storage_gc_interval: "24h"
+zot_storage_gc_delay: "1h"
+
+# Retention Policies
+zot_retention_enabled: true
+zot_retention_dry_run: false
+zot_retention_keep_tags_count: 5
+zot_retention_delete_untagged: true
+
+# Authentication & Access Control
+zot_auth_mode: "htpasswd"            # "none" | "htpasswd"
+zot_allow_anonymous_read: true       # Allow anonymous pull; push requires auth
+zot_htpasswd_path: "{{ zot_config_dir }}/htpasswd"
+
+# List of users to configure in htpasswd
+# Example:
+#   zot_users:
+#     - username: "admin"
+#       password: "secretpassword"
+#       state: "present"
+zot_users: []
+
+# Extensions
+zot_enable_ui: true
+zot_enable_metrics: true
+zot_metrics_path: "/metrics"
+zot_enable_search: true
+zot_enable_scrub: false
+zot_scrub_interval: "168h"
+
+# Pull-Through Cache & Upstream Sync (optional)
+zot_enable_sync: false
+# Example upstream registries configuration:
+# zot_sync_registries:
+#   - url: "https://registry-1.docker.io"
+#     prefix: "dockerhub"
+#     on_demand: true
+#     tls_verify: true
+#     max_retries: 3
+#     retry_delay: "15m"
+zot_sync_registries: []
+
+# Logging
+zot_log_level: "info"                # "debug", "info", "warn", "error"
+zot_log_output: ""                   # Empty for journald/stdout; or set to "/var/log/zot/zot.log"
+zot_log_audit: ""
+
+# Systemd process settings
+zot_restart_sec: "5s"
+zot_nofile_limit: 65536
+zot_custom_env: {}

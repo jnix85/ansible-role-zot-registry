@@ -1,0 +1,32 @@
+[Unit]
+Description=Zot OCI Registry Daemon
+Documentation=https://zotregistry.dev/
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ zot_user }}
+Group={{ zot_group }}
+EnvironmentFile=-{{ zot_config_dir }}/zot.env
+ExecStartPre={{ zot_bin_dir }}/zot verify {{ zot_config_dir }}/config.json
+ExecStart={{ zot_bin_dir }}/zot serve {{ zot_config_dir }}/config.json
+Restart=always
+RestartSec={{ zot_restart_sec }}
+LimitNOFILE={{ zot_nofile_limit }}
+
+# LXC-Safe Process Isolation & Hardening
+NoNewPrivileges=yes
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Standard Output / Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=zot
+
+[Install]
+WantedBy=multi-user.target

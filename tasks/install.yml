@@ -1,0 +1,35 @@
+---
+# Binary download and installation tasks
+
+- name: Check if Zot binary is currently installed
+  ansible.builtin.stat:
+    path: "{{ zot_bin_dir }}/zot"
+  register: zot_binary_stat
+
+- name: Query installed Zot version
+  ansible.builtin.command: "{{ zot_bin_dir }}/zot -v"
+  register: zot_installed_version_raw
+  changed_when: false
+  failed_when: false
+  when: zot_binary_stat.stat.exists
+
+- name: Download and install Zot binary
+  ansible.builtin.get_url:
+    url: "{{ zot_download_url }}"
+    dest: "{{ zot_bin_dir }}/zot"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  when: >
+    not zot_binary_stat.stat.exists or
+    (zot_installed_version_raw.stdout is defined and zot_version not in zot_installed_version_raw.stdout)
+  notify: Restart zot
+
+- name: Download and install zli management CLI utility
+  ansible.builtin.get_url:
+    url: "{{ zot_zli_download_url }}"
+    dest: "{{ zot_bin_dir }}/zli"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  when: zot_install_zli

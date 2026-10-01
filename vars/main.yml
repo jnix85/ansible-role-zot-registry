@@ -1,0 +1,21 @@
+---
+# Internal variables and architecture mappings for zot_registry
+
+zot_arch_map:
+  x86_64: "amd64"
+  aarch64: "arm64"
+  arm64: "arm64"
+  armv7l: "arm"
+
+zot_prerequisite_packages:
+  - curl
+  - tar
+  - ca-certificates
+  - apache2-utils
+
+zot_github_repo: "project-zot/zot"
+zot_binary_name: "{{ (zot_flavor == 'minimal') | ternary('zot-linux-' + zot_arch + '-minimal', 'zot-linux-' + zot_arch) }}"
+zot_zli_binary_name: "zli-linux-{{ zot_arch }}"
+
+zot_download_url: "https://github.com/{{ zot_github_repo }}/releases/download/v{{ zot_version }}/{{ zot_binary_name }}"
+zot_zli_download_url: "https://github.com/{{ zot_github_repo }}/releases/download/v{{ zot_version }}/{{ zot_zli_binary_name }}"

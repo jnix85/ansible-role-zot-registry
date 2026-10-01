@@ -1,0 +1,32 @@
+---
+# Preflight validation and dependency tasks
+
+- name: Verify supported operating system family
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == 'Debian'
+    fail_msg: "The zot_registry role currently supports Debian and Ubuntu operating systems only."
+    quiet: true
+
+- name: Map host architecture to Zot binary architecture
+  ansible.builtin.set_fact:
+    zot_arch: "{{ zot_arch_map[ansible_architecture] | default('') }}"
+
+- name: Validate that host architecture is supported
+  ansible.builtin.assert:
+    that:
+      - zot_arch | length > 0
+    fail_msg: "Architecture '{{ ansible_architecture }}' is not supported by this role."
+    quiet: true
+
+- name: Update apt cache if older than 1 hour
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_pkg_mgr == 'apt'
+
+- name: Install prerequisite packages
+  ansible.builtin.apt:
+    name: "{{ zot_prerequisite_packages }}"
+    state: present
+  when: ansible_pkg_mgr == 'apt'

@@ -1,0 +1,41 @@
+---
+# Service management and verification tasks
+
+- name: Deploy Zot systemd service unit
+  ansible.builtin.template:
+    src: "zot.service.j2"
+    dest: "/etc/systemd/system/zot.service"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  notify:
+    - Reload systemd
+    - Restart zot
+
+- name: Flush handlers to apply systemd and configuration changes
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure Zot service is enabled and started
+  ansible.builtin.systemd:
+    name: zot
+    state: started
+    enabled: true
+
+- name: Wait for Zot HTTP port to open
+  ansible.builtin.wait_for:
+    host: "{{ (zot_listen_address == '0.0.0.0') | ternary('127.0.0.1', zot_listen_address) }}"
+    port: "{{ zot_listen_port }}"
+    state: started
+    timeout: 30
+
+- name: Probe Zot OCI v2 API endpoint for operational status
+  ansible.builtin.uri:
+    url: "http://{{ (zot_listen_address == '0.0.0.0') | ternary('127.0.0.1', zot_listen_address) }}:{{ zot_listen_port }}/v2/"
+    status_code:
+      - 200
+      - 401
+    return_content: false
+  register: zot_api_probe
+  until: zot_api_probe.status in [200, 401]
+  retries: 10
+  delay: 2

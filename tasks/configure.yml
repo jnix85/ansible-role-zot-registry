@@ -1,0 +1,94 @@
+---
+# Configuration file and credential management tasks
+
+- name: Create Zot configuration directory
+  ansible.builtin.file:
+    path: "{{ zot_config_dir }}"
+    state: directory
+    owner: "root"
+    group: "{{ zot_group }}"
+    mode: "0750"
+
+- name: Create Zot local data and cache directory
+  ansible.builtin.file:
+    path: "{{ zot_data_dir }}"
+    state: directory
+    owner: "{{ zot_user }}"
+    group: "{{ zot_group }}"
+    mode: "0750"
+
+- name: Create Zot log directory if file logging is configured
+  ansible.builtin.file:
+    path: "{{ zot_log_dir }}"
+    state: directory
+    owner: "{{ zot_user }}"
+    group: "{{ zot_group }}"
+    mode: "0750"
+  when: zot_log_output | length > 0
+
+- name: Deploy IDrive e2 S3 credentials environment file
+  ansible.builtin.template:
+    src: "zot.env.j2"
+    dest: "{{ zot_config_dir }}/zot.env"
+    owner: "root"
+    group: "{{ zot_group }}"
+    mode: "0600"
+  notify: Restart zot
+
+- name: Ensure htpasswd file exists with secure permissions
+  ansible.builtin.file:
+    path: "{{ zot_htpasswd_path }}"
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+    owner: "root"
+    group: "{{ zot_group }}"
+    mode: "0640"
+  when: zot_auth_mode == 'htpasswd'
+
+- name: Configure Zot htpasswd user credentials
+  community.general.htpasswd:
+    path: "{{ zot_htpasswd_path }}"
+    name: "{{ item.username }}"
+    password: "{{ item.password }}"
+    state: "{{ item.state | default('present') }}"
+    crypt_scheme: bcrypt
+    owner: "root"
+    group: "{{ zot_group }}"
+    mode: "0640"
+  loop: "{{ zot_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  no_log: true
+  when:
+    - zot_auth_mode == 'htpasswd'
+    - zot_users | length > 0
+  notify: Restart zot
+
+- name: Determine active Zot usernames
+  ansible.builtin.set_fact:
+    zot_active_usernames: >-
+      {{
+        (
+          zot_users
+          | rejectattr('state', 'defined')
+          | map(attribute='username')
+          | list
+          +
+          zot_users
+          | selectattr('state', 'defined')
+          | rejectattr('state', 'equalto', 'absent')
+          | map(attribute='username')
+          | list
+        ) | unique
+      }}
+
+- name: Deploy Zot JSON configuration file
+  ansible.builtin.template:
+    src: "config.json.j2"
+    dest: "{{ zot_config_dir }}/config.json"
+    owner: "root"
+    group: "{{ zot_group }}"
+    mode: "0640"
+    validate: "{{ zot_bin_dir }}/zot verify %s"
+  notify: Restart zot

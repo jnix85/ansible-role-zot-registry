@@ -1,0 +1,134 @@
+{
+  "distSpecVersion": "1.1.0",
+  "storage": {
+    "rootDirectory": "{{ zot_data_dir }}",
+    "dedupe": {{ zot_storage_dedupe | to_json }},
+    "commit": {{ zot_storage_commit | to_json }}
+{% if zot_storage_gc %}
+    ,
+    "gc": true,
+    "gcDelay": "{{ zot_storage_gc_delay }}",
+    "gcInterval": "{{ zot_storage_gc_interval }}"
+{% endif %}
+{% if zot_retention_enabled %}
+    ,
+    "retention": {
+      "dryRun": {{ zot_retention_dry_run | to_json }},
+      "policies": [
+        {
+          "repositories": ["**"],
+          "deleteUntagged": {{ zot_retention_delete_untagged | to_json }},
+          "keepTags": [
+            {
+              "mostRecentlyPushedCount": {{ zot_retention_keep_tags_count }}
+            }
+          ]
+        }
+      ]
+    }
+{% endif %}
+{% if zot_s3_enabled %}
+{% set s3_proto = 'https://' if zot_s3_secure else 'http://' %}
+{% set s3_endpoint_url = zot_s3_endpoint if (zot_s3_endpoint.startswith('http://') or zot_s3_endpoint.startswith('https://')) else (s3_proto + zot_s3_endpoint) %}
+    ,
+    "storageDriver": {
+      "name": "s3",
+      "region": "{{ zot_s3_region }}",
+      "bucket": "{{ zot_s3_bucket }}",
+{% if zot_s3_endpoint | length > 0 %}
+      "regionendpoint": "{{ s3_endpoint_url }}",
+{% endif %}
+      "secure": {{ zot_s3_secure | to_json }},
+      "skipverify": {{ zot_s3_skip_verify | to_json }},
+      "forcepathstyle": {{ zot_s3_force_path_style | to_json }}
+    }
+{% endif %}
+  },
+  "http": {
+    "address": "{{ zot_listen_address }}",
+    "port": "{{ zot_listen_port }}"
+{% if zot_tls_enabled and zot_tls_cert | length > 0 and zot_tls_key | length > 0 %}
+    ,
+    "tls": {
+      "cert": "{{ zot_tls_cert }}",
+      "key": "{{ zot_tls_key }}"
+{% if zot_tls_cacert | length > 0 %}
+      ,
+      "cacert": "{{ zot_tls_cacert }}"
+{% endif %}
+    }
+{% endif %}
+{% if zot_auth_mode == 'htpasswd' %}
+    ,
+    "auth": {
+      "htpasswd": {
+        "path": "{{ zot_htpasswd_path }}"
+      }
+    },
+    "accessControl": {
+      "adminPolicy": {
+        "users": {{ zot_active_usernames | default([]) | to_json }},
+        "actions": ["read", "create", "update", "delete"]
+      },
+      "repositories": {
+        "**": {
+{% if zot_allow_anonymous_read %}
+          "defaultPolicy": ["read"],
+{% endif %}
+          "policies": [
+{% if zot_allow_anonymous_read %}
+            {
+              "users": ["*"],
+              "actions": ["read"]
+            },
+{% endif %}
+            {
+              "users": {{ zot_active_usernames | default([]) | to_json }},
+              "actions": ["read", "create", "update", "delete"]
+            }
+          ]
+        }
+      }
+    }
+{% endif %}
+  },
+  "log": {
+    "level": "{{ zot_log_level }}"
+{% if zot_log_output | length > 0 %}
+    ,
+    "output": "{{ zot_log_output }}"
+{% endif %}
+{% if zot_log_audit | length > 0 %}
+    ,
+    "audit": "{{ zot_log_audit }}"
+{% endif %}
+  },
+  "extensions": {
+    "ui": {
+      "enable": {{ zot_enable_ui | to_json }}
+    },
+    "metrics": {
+      "enable": {{ zot_enable_metrics | to_json }},
+      "prometheus": {
+        "path": "{{ zot_metrics_path }}"
+      }
+    },
+    "search": {
+      "enable": {{ zot_enable_search | to_json }}
+    }
+{% if zot_enable_scrub %}
+    ,
+    "scrub": {
+      "enable": true,
+      "interval": "{{ zot_scrub_interval }}"
+    }
+{% endif %}
+{% if zot_enable_sync and zot_sync_registries | length > 0 %}
+    ,
+    "sync": {
+      "enable": true,
+      "registries": {{ zot_sync_registries | to_json }}
+    }
+{% endif %}
+  }
+}

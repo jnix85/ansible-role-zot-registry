@@ -1,0 +1,20 @@
+---
+# User and group management for zot service
+
+- name: Create dedicated system group for Zot
+  ansible.builtin.group:
+    name: "{{ zot_group }}"
+    gid: "{{ zot_group_gid }}"
+    system: true
+    state: present
+
+- name: Create dedicated system user for Zot
+  ansible.builtin.user:
+    name: "{{ zot_user }}"
+    uid: "{{ zot_user_uid }}"
+    group: "{{ zot_group }}"
+    home: "{{ zot_data_dir }}"
+    shell: "{{ zot_user_shell }}"
+    system: true
+    create_home: false
+    state: present

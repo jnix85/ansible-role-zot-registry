@@ -1,0 +1,17 @@
+---
+# Main tasks orchestrator for zot_registry
+
+- name: Include preflight checks and dependency setup
+  ansible.builtin.include_tasks: preflight.yml
+
+- name: Include user and group provisioning
+  ansible.builtin.include_tasks: user.yml
+
+- name: Include binary download and installation
+  ansible.builtin.include_tasks: install.yml
+
+- name: Include configuration and credential generation
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Include systemd service configuration and health verification
+  ansible.builtin.include_tasks: service.yml

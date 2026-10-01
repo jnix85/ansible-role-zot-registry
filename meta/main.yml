@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  author: Jason Parks
+  namespace: clawduino
+  role_name: zot_registry
+  description: Comprehensive Ansible role for deploying Zot OCI Registry with IDrive e2 S3 storage backend.
+  company: clawduino
+  license: MIT
+  min_ansible_version: "2.14"
+
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+        - all
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+        - all
+
+  galaxy_tags:
+    - container
+    - registry
+    - oci
+    - zot
+    - s3
+    - storage
+    - docker
+    - idrive
+
+dependencies: []
